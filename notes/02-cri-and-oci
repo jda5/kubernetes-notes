@@ -35,12 +35,11 @@ Because Kubernetes clusters no longer use the Docker engine directly, you cannot
 
 As a Kubernetes administrator, `crictl` will become your best friend. It acts as a drop-in replacement for the Docker CLI commands you are already used to:
 
-| Docker CLI | `crictl` Equivalent | Description |
-| :--- | :--- | :--- |
-| `docker exec` | `crictl exec` | Run a command inside a running container. |
-| `docker images`| `crictl images` | List images present on the node. |
-| `docker info` | `crictl info` | Display system-wide information about the runtime. |
-| `docker logs` | `crictl logs` | Fetch the logs of a specific container. |
-| `docker ps` | `crictl ps` | List currently running containers on the node. |
+* `docker exec`     -> `crictl exec`
+* `docker images`   -> `crictl images`
+* `docker info`     -> `crictl info`
+* `docker logs`     -> `crictl logs`
+
+etc.
 
 > **Summary:** `nerdctl` is a developer-friendly tool to interface with `containerd` (like Docker). `crictl` is an administrator tool to debug Kubernetes nodes across *any* CRI runtime.
