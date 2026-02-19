@@ -1,0 +1,46 @@
+# 02 - Container Runtime Interface (CRI) and Open Container Initiative (OCI)
+
+In the early days, Kubernetes was tightly coupled with Docker. To make Kubernetes open and extensible to *any* container runtime, Kubernetes introduced the **Container Runtime Interface (CRI)**.
+
+It is important to distinguish between the CRI and the OCI:
+
+* **OCI (Open Container Initiative):** Defines the industry standards for container formats. It consists of the **ImageSpec** (how an image should be built) and the **RuntimeSpec** (how a container should run).
+* **CRI (Container Runtime Interface):** Defines how Kubernetes (specifically the `kubelet`) communicates with the container runtime. 
+
+Docker itself is a massive suite of tools (volumes, builds, APIs, CLI) that does *not* natively adhere to the CRI. However, deep inside Docker is a core runtime component called **`containerd`**. Interestingly, `containerd` *does* fully support and adhere to the CRI.
+
+## The "Docker Deprecation" Explained
+
+When you hear "Kubernetes deprecated Docker" (which officially happened in version 1.24), it does not mean Docker is dead. It simply means Kubernetes changed how it interacts with runtimes.
+
+* **The Old Way (dockershim):** Because Docker predated the CRI and wasn't CRI-compatible as a whole, Kubernetes had to maintain a temporary, hacky bridge piece of code called `dockershim` just to translate CRI requests into something Docker could understand. 
+* **The New Way:** Kubernetes realized it didn't need all the extra bulk Docker provided (build tools, Docker CLI, etc.). It only needed the underlying container runner (`containerd`). By talking directly to `containerd` via the CRI, Kubernetes was able to remove the `dockershim` bridge entirely. This removal is what people mean by "Docker deprecation."
+
+Docker is still the most popular tool for developers building images locally. Any image built by Docker is OCI-compliant, meaning Kubernetes can run it perfectly fine using `containerd`.
+
+## Container CLI Tools (`ctr`, `nerdctl`, and `crictl`)
+
+Because Kubernetes clusters no longer use the Docker engine directly, you cannot use the standard `docker` CLI commands on a cluster node to see running containers. Instead, you will use specific debugging tools.
+
+### Tool Breakdown
+
+* **`ctr`:** A low-level debugging tool that comes packaged with `containerd`. It is strictly made for debugging `containerd` directly. **(avoid using this for general tasks; it is not user-friendly).**
+* **`nerdctl`:** A general-purpose tool that provides a stable, Docker-like CLI for `containerd`. It supports Docker Compose and newer features. If you are using `containerd` on your local machine instead of Docker, this is your drop-in replacement.
+* **`crictl`:** A CLI tool specifically built for interacting with *any* CRI-compatible container runtime. 
+    * It is installed separately and is primarily used by Kubernetes administrators to inspect and debug container runtimes on worker nodes.
+    * It works hand-in-hand with the `kubelet`.
+    * **Note:** It is used strictly for debugging, *not* for creating or managing application containers day-to-day.
+
+### `docker` vs `crictl` Command Comparison
+
+As a Kubernetes administrator, `crictl` will become your best friend. It acts as a drop-in replacement for the Docker CLI commands you are already used to:
+
+| Docker CLI | `crictl` Equivalent | Description |
+| :--- | :--- | :--- |
+| `docker exec` | `crictl exec` | Run a command inside a running container. |
+| `docker images`| `crictl images` | List images present on the node. |
+| `docker info` | `crictl info` | Display system-wide information about the runtime. |
+| `docker logs` | `crictl logs` | Fetch the logs of a specific container. |
+| `docker ps` | `crictl ps` | List currently running containers on the node. |
+
+> **Summary:** `nerdctl` is a developer-friendly tool to interface with `containerd` (like Docker). `crictl` is an administrator tool to debug Kubernetes nodes across *any* CRI runtime.
