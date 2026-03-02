@@ -18,15 +18,15 @@ class Book(BookTitle):
 
 # -------------------------------------------------------------------------------- queries
 
-CREATE_BOOK_TABLE = """
+CREATE_DATABASE = """
+CREATE DATABASE IF NOT EXISTS books_db;
+
 CREATE TABLE IF NOT EXISTS books (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL
-)
-"""
+);
 
-CREATE_DATABASE = """
-CREATE DATABASE IF NOT EXISTS books_db
+USE books_db;
 """
 
 INSERT_BOOK = """
@@ -73,8 +73,6 @@ async def lifespan(_: FastAPI):
     )
     cursor = connection.cursor()
     cursor.execute(CREATE_DATABASE)
-    cursor.execute("USE books_db")
-    cursor.execute(CREATE_BOOK_TABLE)
     yield
     cursor.close()
     connection.close()
