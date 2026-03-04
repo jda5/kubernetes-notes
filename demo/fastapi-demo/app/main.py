@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 import mysql.connector
-from fastapi import FastAPI, HTTPException
+from mysql.connector.abstracts import MySQLCursorAbstract
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
 from starlette.config import Config
+
 
 # -------------------------------------------------------------------------------- models
 
@@ -20,13 +23,13 @@ class Book(BookTitle):
 
 CREATE_DATABASE = """
 CREATE DATABASE IF NOT EXISTS books_db;
+"""
 
-CREATE TABLE IF NOT EXISTS books (
+CREATE_TABLE = """
+CREATE TABLE IF NOT EXISTS books_db.books (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL
 );
-
-USE books_db;
 """
 
 INSERT_BOOK = """
@@ -54,28 +57,42 @@ FROM
 
 config = Config(".env")
 
-MYSQL_USER = config("MYSQL_USER")
-MYSQL_PASSWORD = config("MYSQL_PASSWORD")
+MYSQL_ROOT_PASSWORD = config("MYSQL_ROOT_PASSWORD")
 
-connection = None
-cursor = None
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    global connection, cursor # pylint: disable=global-statement
-    connection = mysql.connector.connect(
+def get_cursor():
+    """
+    Helper to create a fresh cursor
+    """
+    conn = mysql.connector.connect(
         host="db",
-        user=MYSQL_USER,
-        password=MYSQL_PASSWORD,
+        user="root",
+        database="books_db",
+        password=MYSQL_ROOT_PASSWORD,
         port=3306,
         autocommit=True,
     )
-    cursor = connection.cursor()
+    cursor = conn.cursor()
+    try:
+        yield cursor
+    finally:
+        cursor.close()
+        conn.close()
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    conn = mysql.connector.connect(
+        host="db",
+        user="root",
+        password=MYSQL_ROOT_PASSWORD,
+        port=3306,
+        autocommit=True,
+    )
+    cursor = conn.cursor()
     cursor.execute(CREATE_DATABASE)
-    yield
+    cursor.execute(CREATE_TABLE)
     cursor.close()
-    connection.close()
+    conn.close()
+    yield
 
 
 app = FastAPI(lifespan=lifespan)
@@ -84,7 +101,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/books/{book_id}")
-def get_book(book_id: int) -> Book:
+def get_book(book_id: int, cursor: Annotated[MySQLCursorAbstract, Depends(get_cursor)]) -> Book:
     cursor.execute(SELECT_BOOK, (book_id,))
     result = cursor.fetchone()
     if result is None:
@@ -93,14 +110,14 @@ def get_book(book_id: int) -> Book:
 
 
 @app.get("/books")
-def get_books() -> list[Book]:
+def get_books(cursor: Annotated[MySQLCursorAbstract, Depends(get_cursor)]) -> list[Book]:
     cursor.execute(SELECT_BOOKS)
     results = cursor.fetchall()
     return [Book(id=row[0], title=row[1]) for row in results]
 
 
 @app.post("/books")
-def post_book(title: BookTitle) -> Book:
+def post_book(title: BookTitle, cursor: Annotated[MySQLCursorAbstract, Depends(get_cursor)]) -> Book:
     cursor.execute(INSERT_BOOK, (title.title,))
     book_id = cursor.lastrowid
     return Book(id=book_id, title=title.title)

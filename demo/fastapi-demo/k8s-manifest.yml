@@ -1,0 +1,145 @@
+# ==============================================================================
+# THE SECRETS (Replaces your .env file)
+# ==============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets # We reference this name later in our Deployments
+type: Opaque # Opaque just means this is an arbitrary key-value pair secret (default)
+stringData: 
+  # In a real production environment, you would use 'data:' and Base64 encode these values.
+  # 'stringData' is a convenience feature that lets you type plain text, and Kubernetes 
+  # automatically encodes it for you behind the scenes.
+  MYSQL_ROOT_PASSWORD: "V23Xb3u98xHOX3WeiKIta6cnN"
+
+---
+# ==============================================================================
+# THE DATABASE STORAGE (Replaces volumes: db_data)
+# ==============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim # A "Claim" is a request for storage from the cluster
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    # ReadWriteOnce means this volume can only be mounted by a single node at a time.
+    # (Since it's a database, we don't want multiple nodes writing to the exact same file!)
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi # We are asking the cluster to carve out 1 Gigabyte of disk space
+
+
+
+---
+# ==============================================================================
+# THE DATABASE DEPLOYMENT & SERVICE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: 1 # The Desired State: We want exactly 1 instance of our database running
+  
+  # THE GLUE: The 'selector' tells the Deployment WHICH pods it is in charge of managing.
+  # It says "I own any pod that has the label app: mysql".
+  selector:
+    matchLabels:
+      app: mysql
+  
+  # THE BLUEPRINT: This 'template' is what the Deployment uses to stamp out new Pods.
+  template:
+    metadata:
+      # We assign the label 'app: mysql' to every pod created, so the selector above can find them.
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:latest
+        ports:
+        - containerPort: 3306 # The port the container is internally listening on
+        
+        # Injecting our secrets!
+        envFrom:
+        - secretRef:
+            name: app-secrets
+            
+        # Connecting the storage: We tell the container WHERE to put the files...
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+          
+      # ...and we define WHAT that storage actually is (our PVC from earlier).
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # CRUCIAL: The name of this service becomes its internal DNS name inside the cluster!
+  # Because this is named 'db', your Python app can simply connect to host="db".
+  name: db 
+spec:
+  # THE GLUE: The Service needs to know where to send network traffic. 
+  # It says "Route all traffic to any pod with the label app: mysql".
+  selector:
+    app: mysql
+  ports:
+    - protocol: TCP
+      port: 3306 # The port the Service listens on
+      targetPort: 3306 # The port on the Pod it forwards traffic to
+
+
+
+---
+# ==============================================================================
+# THE FASTAPI DEPLOYMENT & SERVICE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-app
+spec:
+  replicas: 1 # If you change this to 5, the Controller Manager will instantly spin up 4 more!
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+      - name: fastapi
+        image: fastapi-app:latest
+        
+        # Minikube quirk: By default, K8s tries to pull images from the internet. 
+        # 'Never' tells it to look at your local Docker daemon for the image you built.
+        imagePullPolicy: Never 
+        ports:
+        - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: app-secrets
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  # NodePort is a specific type of service that exposes your app to the outside world 
+  # by opening a specific port on the physical Worker Node itself.
+  type: NodePort 
+  selector:
+    app: fastapi
+  ports:
+    - protocol: TCP
+      port: 80 # The port the Service listens on internally
+      targetPort: 80 # The port your Python app is running on inside the container
+      nodePort: 30080 # The physical port opened on your Mac (Minikube instance) to let you in
