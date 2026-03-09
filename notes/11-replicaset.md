@@ -106,9 +106,11 @@ However, it still requires the `template` section. Why? Because if one of those 
     `kubectl create -f replicaset-definition.yml` (or `kubectl apply -f ...`)
 
 * List legacy Replication Controllers
+    
     `kubectl get rc`
 
 * List modern ReplicaSets
+    
     `kubectl get rs`
     (The output shows _DESIRED_ vs _CURRENT_ vs _READY_ states).
 
@@ -116,25 +118,26 @@ However, it still requires the `template` section. Why? Because if one of those 
 
 If your user base suddenly spikes, you need to scale up quickly. There are three ways to do this:
 
-The Declarative Way (Recommended):
+* The Declarative Way (Recommended):
 
-Open your YAML file, change replicas: 3 to replicas: 6, save the file, and run:
+    Open your YAML file, change replicas: 3 to replicas: 6, save the file, and run:
 
-`kubectl replace -f replicaset-definition.yml (or kubectl apply -f ...)`
+    `kubectl replace -f replicaset-definition.yml (or kubectl apply -f ...)`
 
-The Imperative Scale Command (By File):
+* The Imperative Scale Command (By File):
 
-`kubectl scale --replicas=6 -f replicaset-definition.yml`
+    `kubectl scale --replicas=6 -f replicaset-definition.yml`
 
-(Warning: This scales the live cluster, but does NOT update the text in your YAML file!)
+    (Warning: This scales the live cluster, but does NOT update the text in your YAML file!)
 
-The Imperative Scale Command (By Name):
+* The Imperative Scale Command (By Name):
 
-`kubectl scale replicaset myapp-replicaset --replicas=6`
+    `kubectl scale replicaset myapp-replicaset --replicas=6`
 
 ### Deleting
 
 * Delete the ReplicaSet:
+
     `kubectl delete replicaset myapp-replicaset`
 
-(Note: By default, deleting a ReplicaSet will automatically terminate all the underlying Pods it was managing).
+    (Note: By default, deleting a ReplicaSet will automatically terminate all the underlying Pods it was managing).
