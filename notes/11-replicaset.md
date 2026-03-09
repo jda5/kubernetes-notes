@@ -102,6 +102,7 @@ However, it still requires the `template` section. Why? Because if one of those 
 ### Creating and Viewing
 
 * Create the object
+    
     `kubectl create -f replicaset-definition.yml` (or `kubectl apply -f ...`)
 
 * List legacy Replication Controllers
