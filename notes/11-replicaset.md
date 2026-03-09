@@ -101,19 +101,15 @@ However, it still requires the `template` section. Why? Because if one of those 
 
 ### Creating and Viewing
 
-Create the object:
+* Create the object
+    `kubectl create -f replicaset-definition.yml` (or `kubectl apply -f ...`)
 
-`kubectl create -f replicaset-definition.yml` (or `kubectl apply -f ...`)
+* List legacy Replication Controllers
+    `kubectl get rc`
 
-List legacy Replication Controllers:
-
-`kubectl get rc`
-
-List modern ReplicaSets:
-
-`kubectl get rs`
-
-(The output shows _DESIRED_ vs _CURRENT_ vs _READY_ states).
+* List modern ReplicaSets
+    `kubectl get rs`
+    (The output shows _DESIRED_ vs _CURRENT_ vs _READY_ states).
 
 ### Scaling a ReplicaSet
 
@@ -137,8 +133,7 @@ The Imperative Scale Command (By Name):
 
 ### Deleting
 
-Delete the ReplicaSet:
-
-`kubectl delete replicaset myapp-replicaset`
+* Delete the ReplicaSet:
+    `kubectl delete replicaset myapp-replicaset`
 
 (Note: By default, deleting a ReplicaSet will automatically terminate all the underlying Pods it was managing).
