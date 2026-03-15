@@ -72,5 +72,10 @@ spec:
 
 ## Commands
 
-* `kubectl create -f service-definition.yml` - Create the service (or use `apply`).
-* `kubectl get services` - List all services to view their assigned Cluster-IPs and port mappings.
+* Create the service (or use `apply`).
+
+    `kubectl create -f service-definition.yml`
+
+* List all services to view their assigned Cluster-IPs and port mappings.
+
+    `kubectl get services`
