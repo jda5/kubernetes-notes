@@ -44,11 +44,13 @@ To deploy and view Pods, you will use the `kubectl` command-line tool.
 **Creating a Pod**
 
 To deploy a Pod using an image from a registry (like the `nginx` image from Docker Hub), use the `run` command:
+
 `kubectl run my-web-pod --image=nginx`
 
 **Viewing Pods**
 
 To see a list of all Pods currently in your cluster and their statuses:
+
 `kubectl get pods`
 
 **Common Pod States**

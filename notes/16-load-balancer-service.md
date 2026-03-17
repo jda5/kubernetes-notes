@@ -49,9 +49,11 @@ spec:
 ## Commands
 
 * Create the service.
+    
     `kubectl apply -f loadbalancer-definition.yml`
 
 * List the services.
+    
     `kubectl get services`
     
     _Under the EXTERNAL-IP column, it will say <pending> for a few minutes while the cloud provider provisions the hardware, and will eventually populate with a public IP or URL._
