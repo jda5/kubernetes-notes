@@ -17,7 +17,7 @@ This is the job of the **Replication Controller** and its modern successor, the 
 * **ReplicaSet:** The new, recommended way to set up replication. 
 * **The Key Difference:** While they serve the exact same purpose, the ReplicaSet requires a `selector` block (specifically `matchLabels`) in its YAML definition, which allows for much more advanced filtering and grouping of Pods. 
 
-> **CKA Note:** In the real world, you rarely create a ReplicaSet directly. Instead, you create a **Deployment** (covered next in the course), which automatically creates and manages ReplicaSets for you. However, you *must* understand how ReplicaSets work because they are the engine under the hood!
+> **CKA Note:** In the real world, you rarely create a ReplicaSet directly. Instead, you create a **Deployment** (covered next in deployments.md), which automatically creates and manages ReplicaSets for you. However, you *must* understand how ReplicaSets work because they are the engine under the hood!
 
 ## YAML Definitions & Annotations
 
